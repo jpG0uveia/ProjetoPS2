@@ -1,0 +1,7 @@
+target
+pdf
+bin
+.settings
+.vscode
+.classpath
+.project

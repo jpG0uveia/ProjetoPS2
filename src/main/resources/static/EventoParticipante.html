@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Eventos e Participantes</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+</head>
+<body>
+    <h1>Gerenciamento de Eventos e Participantes</h1>
+
+    <h2>Eventos</h2>
+    <table>
+        <tr>
+            <td>ID:</td>
+            <td><input type="text" id="txtEventoId" disabled></td>
+        </tr>
+        <tr>
+            <td>Nome:</td>
+            <td><input type="text" id="txtEventoNome"></td>
+        </tr>
+        <tr>
+            <td>Data do Evento:</td>
+            <td><input type="text" id="txtEventoData"></td>
+        </tr>
+        <tr>
+            <td>Local:</td>
+            <td><input type="text" id="txtEventoLocal"></td>
+        </tr>
+        <tr>
+            <td>Descrição:</td>
+            <td><input type="text" id="txtEventoDescricao"></td>
+        </tr>
+        <tr>
+            <td>Capacidade:</td>
+            <td><input type="text" id="txtEventoCapacidade"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <input type="button" value="Novo" onclick="novoEvento()" id="btnEventoNovo">
+                <input type="button" value="Salvar" onclick="salvarEvento()" id="btnEventoSalvar">
+                <input type="button" value="Apagar" onclick="apagarEvento()" id="btnEventoApagar">
+                <input type="button" value="Cancelar" onclick="cancelarEdicaoEvento()" id="btnEventoCancelar">
+            </td>
+        </tr>
+    </table>
+   
+    <p style="font-weight:bold" id="paragrafoMensagemEvento"></p>
+   
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Data do Evento</th>
+                <th>Local</th>
+                <th>Descrição</th>
+                <th>Capacidade</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabelaEventos"></tbody>
+    </table>
+
+    <h2>Participantes</h2>
+    <table>
+        <tr>
+            <td>ID:</td>
+            <td><input type="text" id="txtParticipanteId" disabled></td>
+        </tr>
+        <tr>
+            <td>Nome:</td>
+            <td><input type="text" id="txtParticipanteNome"></td>
+        </tr>
+        <tr>
+            <td>CPF:</td>
+            <td><input type="text" id="txtParticipanteCPF"></td>
+        </tr>
+        <tr>
+            <td>Evento:</td>
+            <td><select id="selectParticipanteEvento"></select></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <input type="button" value="Novo" onclick="novoParticipante()" id="btnParticipanteNovo">
+                <input type="button" value="Salvar" onclick="salvarParticipante()" id="btnParticipanteSalvar">
+                <input type="button" value="Apagar" onclick="apagarParticipante()" id="btnParticipanteApagar">
+                <input type="button" value="Cancelar" onclick="cancelarEdicaoParticipante()" id="btnParticipanteCancelar">
+            </td>
+        </tr>
+    </table>
+   
+    <p style="font-weight:bold" id="paragrafoMensagemParticipante"></p>
+   
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Evento</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabelaParticipantes"></tbody>
+    </table>
+
+    <script>
+        // Evento scripts
+        const corpoTabelaEventos = document.querySelector('#corpoTabelaEventos');
+        const paragrafoMensagemEvento = document.querySelector('#paragrafoMensagemEvento');
+        const txtEventoNome = document.querySelector('#txtEventoNome');
+        const txtEventoData = document.querySelector('#txtEventoData');
+        const txtEventoLocal = document.querySelector('#txtEventoLocal');
+        const txtEventoDescricao = document.querySelector('#txtEventoDescricao');
+        const txtEventoCapacidade = document.querySelector('#txtEventoCapacidade');
+        const txtEventoId = document.querySelector('#txtEventoId');
+
+        const btnEventoNovo = document.querySelector('#btnEventoNovo');
+        const btnEventoSalvar = document.querySelector('#btnEventoSalvar');
+        const btnEventoApagar = document.querySelector('#btnEventoApagar');
+        const btnEventoCancelar = document.querySelector('#btnEventoCancelar');
+        let criandoNovoEvento = false;
+
+        async function inicializarEventos() {
+            criandoNovoEvento = false;
+            paragrafoMensagemEvento.innerHTML = 'Pressione o botão Novo ou selecione um evento da lista:';
+            txtEventoId.value = '';
+            txtEventoNome.value = '';
+            txtEventoData.value = '';
+            txtEventoLocal.value = '';
+            txtEventoDescricao.value = '';
+            txtEventoCapacidade.value = '';
+
+            txtEventoId.disabled = true;
+            txtEventoNome.disabled = true;
+            txtEventoData.disabled = true;
+            txtEventoLocal.disabled = true;
+            txtEventoDescricao.disabled = true;
+            txtEventoCapacidade.disabled = true;
+
+            btnEventoNovo.disabled = false;
+            btnEventoSalvar.disabled = true;
+            btnEventoApagar.disabled = true;
+            btnEventoCancelar.disabled = true;
+            listarTodosEventos();
+        }
+
+        async function listarTodosEventos() {
+            const URL = "/api/eventos";
+            try {
+                const resposta = await fetch(URL);
+                if (!resposta.ok) throw Error(resposta.status);
+                const jsonResponse = await resposta.json();
+                preencherTabelaEventos(jsonResponse);
+            } catch (error) {
+                paragrafoMensagemEvento.innerHTML = `Erro ao listar eventos (código ${error.message})`;
+            }
+        }
+
+        function preencherTabelaEventos(eventos) {
+            let linhasTabela = '';
+            eventos.forEach(e => {
+                linhasTabela +=
+                    `<tr><td><a href="javascript:void(0)" onclick="selecionarEvento('${e.id}','${e.nome}','${e.dataEvento}','${e.local}','${e.descricao}','${e.capacidade}')">` +
+                    e.id     + '</a></td>' +
+                    '<td>' + e.nome   + '</td>' +
+                    '<td>' + e.dataEvento + '</td>' +
+                    '<td>' + e.local + '</td>' +
+                    '<td>' + e.descricao + '</td>' +
+                    '<td>' + e.capacidade + '</td></tr>\n';
+            });
+            corpoTabelaEventos.innerHTML = linhasTabela;
+        }
+
+        function selecionarEvento(id, nome, dataEvento, local, descricao, capacidade) {
+            criandoNovoEvento = false;
+            paragrafoMensagemEvento.innerHTML = 'Altere e salve os dados do evento, ou então apague o registro do evento.';
+            txtEventoId.value = id;
+            txtEventoNome.value = nome;
+            txtEventoData.value = dataEvento;
+            txtEventoLocal.value = local;
+            txtEventoDescricao.value = descricao;
+            txtEventoCapacidade.value = capacidade;
+
+            txtEventoId.disabled = true;
+            txtEventoNome.disabled = false;
+            txtEventoData.disabled = false;
+            txtEventoLocal.disabled = false;
+            txtEventoDescricao.disabled = false;
+            txtEventoCapacidade.disabled = false;
+
+            btnEventoNovo.disabled = true;
+            btnEventoSalvar.disabled = false;
+            btnEventoApagar.disabled = false;
+            btnEventoCancelar.disabled = false;
+        }
+
+        async function criarEvento() {
+            const URL = "/api/eventos";
+            const dadosEvento = {
+                'nome': txtEventoNome.value,
+                'dataEvento': txtEventoData.value,
+                'local': txtEventoLocal.value,
+                'descricao': txtEventoDescricao.value,
+                'capacidade': txtEventoCapacidade.value
+            };
+            const postRequest = {
+                method: 'POST',
+                body: JSON.stringify(dadosEvento),
+                headers: { 'Content-type': 'application/json' }
+            };
+            try {
+                const resposta = await fetch(URL, postRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarEventos();
+            } catch (error) {
+                paragrafoMensagemEvento.innerHTML = `Erro ao criar novo evento (código ${error.message})`;
+            }
+        }
+
+        async function alterarEvento() {
+            const ID = txtEventoId.value;
+            const URL = `/api/eventos/${ID}`;
+            const dadosEvento = {
+                'id': ID,
+                'nome': txtEventoNome.value,
+                'dataEvento': txtEventoData.value,
+                'local': txtEventoLocal.value,
+                'descricao': txtEventoDescricao.value,
+                'capacidade': txtEventoCapacidade.value
+            };
+            const putRequest = {
+                method: 'PUT',
+                body: JSON.stringify(dadosEvento),
+                headers: { 'Content-type': 'application/json' }
+            };
+            try {
+                const resposta = await fetch(URL, putRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarEventos();
+            } catch (error) {
+                paragrafoMensagemEvento.innerHTML = `Erro ao alterar evento (código ${error.message})`;
+            }
+        }
+
+        async function removerEvento() {
+            const ID = txtEventoId.value;
+            const URL = `/api/eventos/${ID}`;
+            const deleteRequest = { method: 'DELETE' };
+            try {
+                const resposta = await fetch(URL, deleteRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarEventos();
+            } catch (error) {
+                paragrafoMensagemEvento.innerHTML = `Erro ao apagar evento (código ${error.message})`;
+            }
+        }
+
+        function novoEvento() {
+            criandoNovoEvento = true;
+            paragrafoMensagemEvento.innerHTML = 'Preencha os dados do novo evento e pressione Salvar.';
+            txtEventoId.value = '';
+            txtEventoNome.value = '';
+            txtEventoData.value = '';
+            txtEventoLocal.value = '';
+            txtEventoDescricao.value = '';
+            txtEventoCapacidade.value = '';
+
+            txtEventoId.disabled = true;
+            txtEventoNome.disabled = false;
+            txtEventoData.disabled = false;
+            txtEventoLocal.disabled = false;
+            txtEventoDescricao.disabled = false;
+            txtEventoCapacidade.disabled = false;
+
+            btnEventoNovo.disabled = true;
+            btnEventoSalvar.disabled = false;
+            btnEventoApagar.disabled = true;
+            btnEventoCancelar.disabled = false;
+        }
+
+        function salvarEvento() {
+            if (criandoNovoEvento) {
+                criarEvento();
+            } else {
+                alterarEvento();
+            }
+        }
+
+        function apagarEvento() {
+            removerEvento();
+        }
+
+        function cancelarEdicaoEvento() {
+            inicializarEventos();
+        }
+
+        inicializarEventos();
+
+        // Participantes scripts
+        const corpoTabelaParticipantes = document.querySelector('#corpoTabelaParticipantes');
+        const paragrafoMensagemParticipante = document.querySelector('#paragrafoMensagemParticipante');
+        const txtParticipanteId = document.querySelector('#txtParticipanteId');
+        const txtParticipanteNome = document.querySelector('#txtParticipanteNome');
+        const txtParticipanteCPF = document.querySelector('#txtParticipanteCPF');
+        const selectParticipanteEvento = document.querySelector('#selectParticipanteEvento');
+
+        const btnParticipanteNovo = document.querySelector('#btnParticipanteNovo');
+        const btnParticipanteSalvar = document.querySelector('#btnParticipanteSalvar');
+        const btnParticipanteApagar = document.querySelector('#btnParticipanteApagar');
+        const btnParticipanteCancelar = document.querySelector('#btnParticipanteCancelar');
+        let criandoNovoParticipante = false;
+
+        async function inicializarParticipantes() {
+            criandoNovoParticipante = false;
+            paragrafoMensagemParticipante.innerHTML = 'Pressione o botão Novo ou selecione um participante da lista:';
+            txtParticipanteId.value = '';
+            txtParticipanteNome.value = '';
+            txtParticipanteCPF.value = '';
+            selectParticipanteEvento.value = '';
+
+            txtParticipanteId.disabled = true;
+            txtParticipanteNome.disabled = true;
+            txtParticipanteCPF.disabled = true;
+            selectParticipanteEvento.disabled = true;
+
+            btnParticipanteNovo.disabled = false;
+            btnParticipanteSalvar.disabled = true;
+            btnParticipanteApagar.disabled = true;
+            btnParticipanteCancelar.disabled = true;
+            listarTodosParticipantes();
+            carregarEventosNoComboBox();
+        }
+
+        async function listarTodosParticipantes() {
+            const URL = "/api/participantes";
+            try {
+                const resposta = await fetch(URL);
+                if (!resposta.ok) throw Error(resposta.status);
+                const jsonResponse = await resposta.json();
+                preencherTabelaParticipantes(jsonResponse);
+            } catch (error) {
+                paragrafoMensagemParticipante.innerHTML = `Erro ao listar participantes (código ${error.message})`;
+            }
+        }
+
+        function preencherTabelaParticipantes(participantes) {
+            let linhasTabela = '';
+            participantes.forEach(p => {
+                linhasTabela +=
+                    `<tr><td><a href="javascript:void(0)" onclick="selecionarParticipante('${p.id}','${p.nome}','${p.cpf}','${p.eventoId}')">` +
+                    p.id     + '</a></td>' +
+                    '<td>' + p.nome   + '</td>' +
+                    '<td>' + p.cpf    + '</td>' +
+                    '<td>' + p.eventoId + '</td></tr>\n';
+            });
+            corpoTabelaParticipantes.innerHTML = linhasTabela;
+        }
+
+        async function carregarEventosNoComboBox() {
+            const URL = "/api/eventos";
+            try {
+                const resposta = await fetch(URL);
+                if (!resposta.ok) throw Error(resposta.status);
+                const eventos = await resposta.json();
+                let opcoes = '<option value="">Selecione um evento</option>';
+                eventos.forEach(e => {
+                    opcoes += `<option value="${e.id}">${e.nome}</option>`;
+                });
+                selectParticipanteEvento.innerHTML = opcoes;
+            } catch (error) {
+                paragrafoMensagemParticipante.innerHTML = `Erro ao carregar eventos no combobox (código ${error.message})`;
+            }
+        }
+
+        function selecionarParticipante(id, nome, cpf, eventoId) {
+            criandoNovoParticipante = false;
+            paragrafoMensagemParticipante.innerHTML = 'Altere e salve os dados do participante, ou então apague o registro do participante.';
+            txtParticipanteId.value = id;
+            txtParticipanteNome.value = nome;
+            txtParticipanteCPF.value = cpf;
+            selectParticipanteEvento.value = eventoId;
+
+            txtParticipanteId.disabled = true;
+            txtParticipanteNome.disabled = false;
+            txtParticipanteCPF.disabled = false;
+            selectParticipanteEvento.disabled = false;
+
+            btnParticipanteNovo.disabled = true;
+            btnParticipanteSalvar.disabled = false;
+            btnParticipanteApagar.disabled = false;
+            btnParticipanteCancelar.disabled = false;
+        }
+
+        async function criarParticipante() {
+            const URL = "/api/participantes";
+            const dadosParticipante = {
+                'nome': txtParticipanteNome.value,
+                'cpf': txtParticipanteCPF.value,
+                'eventoId': selectParticipanteEvento.value
+            };
+            const postRequest = {
+                method: 'POST',
+                body: JSON.stringify(dadosParticipante),
+                headers: { 'Content-type': 'application/json' }
+            };
+            try {
+                const resposta = await fetch(URL, postRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarParticipantes();
+            } catch (error) {
+                paragrafoMensagemParticipante.innerHTML = `Erro ao criar novo participante (código ${error.message})`;
+            }
+        }
+
+        async function alterarParticipante() {
+            const ID = txtParticipanteId.value;
+            const URL = `/api/participantes/${ID}`;
+            const dadosParticipante = {
+                'id': ID,
+                'nome': txtParticipanteNome.value,
+                'cpf': txtParticipanteCPF.value,
+                'eventoId': selectParticipanteEvento.value
+            };
+            const putRequest = {
+                method: 'PUT',
+                body: JSON.stringify(dadosParticipante),
+                headers: { 'Content-type': 'application/json' }
+            };
+            try {
+                const resposta = await fetch(URL, putRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarParticipantes();
+            } catch (error) {
+                paragrafoMensagemParticipante.innerHTML = `Erro ao alterar participante (código ${error.message})`;
+            }
+        }
+
+        async function removerParticipante() {
+            const ID = txtParticipanteId.value;
+            const URL = `/api/participantes/${ID}`;
+            const deleteRequest = { method: 'DELETE' };
+            try {
+                const resposta = await fetch(URL, deleteRequest);
+                if (!resposta.ok) throw Error(resposta.status);
+                await resposta.json();
+                inicializarParticipantes();
+            } catch (error) {
+                paragrafoMensagemParticipante.innerHTML = `Erro ao apagar participante (código ${error.message})`;
+            }
+        }
+
+        function novoParticipante() {
+            criandoNovoParticipante = true;
+            paragrafoMensagemParticipante.innerHTML = 'Preencha os dados do novo participante e pressione Salvar.';
+            txtParticipanteId.value = '';
+            txtParticipanteNome.value = '';
+            txtParticipanteCPF.value = '';
+            selectParticipanteEvento.value = '';
+
+            txtParticipanteId.disabled = true;
+            txtParticipanteNome.disabled = false;
+            txtParticipanteCPF.disabled = false;
+            selectParticipanteEvento.disabled = false;
+
+            btnParticipanteNovo.disabled = true;
+            btnParticipanteSalvar.disabled = false;
+            btnParticipanteApagar.disabled = true;
+            btnParticipanteCancelar.disabled = false;
+        }
+
+        function salvarParticipante() {
+            if (criandoNovoParticipante) {
+                criarParticipante();
+            } else {
+                alterarParticipante();
+            }
+        }
+
+        function apagarParticipante() {
+            removerParticipante();
+        }
+
+        function cancelarEdicaoParticipante() {
+            inicializarParticipantes();
+        }
+
+        inicializarParticipantes();
+    </script>
+</body>
+</html>
