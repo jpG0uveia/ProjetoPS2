@@ -10,8 +10,8 @@ public class Participante {
     private String nome;
     private String CPF;
 
-    @ManyToOne
-    @JoinColumn(name = "evento_id")
+    @ManyToOne(fetch = FetchType.EAGER)
+    /* @JoinColumn(name = "evento_id") REMOVER!!!!*/
     private Evento evento;
 
     // Getters and setters

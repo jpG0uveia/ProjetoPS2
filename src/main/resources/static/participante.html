@@ -117,10 +117,10 @@
             participantes.forEach(p => {
                 const eventoNome = p.evento ? p.evento.nome : '';
                 linhasTabela += 
-                    `<tr><td><a href="javascript:void(0)" onclick="selecionarParticipante('${p.id_participante}','${p.nome}','${p.CPF}', '${p.evento ? p.evento.id : ''}')">` 
+                    `<tr><td><a href="javascript:void(0)" onclick="selecionarParticipante('${p.id_participante}','${p.nome}','${p.cpf}', '${p.evento ? p.evento.id : ''}')">` 
                     + p.id_participante + '</a></td>' + 
                     '<td>' + p.nome + '</td>' +
-                    '<td>' + p.CPF + '</td>' +
+                    '<td>' + p.cpf + '</td>' +
                     '<td>' + eventoNome + '</td></tr>\n';
             });
             corpoTabela.innerHTML = linhasTabela;
@@ -157,7 +157,7 @@
             const URL = `/api/participantes`;
             const dadosParticipante = {
                 'nome': txtNome.value,
-                'CPF': txtCPF.value,
+                'cpf': txtCPF.value,
                 'evento': {
                     'id': selectEvento.value
                 }
@@ -183,7 +183,7 @@
             const dadosParticipante = {
                 'id_participante': ID,
                 'nome': txtNome.value,
-                'CPF': txtCPF.value,
+                'cpf': txtCPF.value,
                 'evento': {
                     'id': selectEvento.value
                 }

@@ -1,7 +1,7 @@
 package ps2.restapidb;
 
 import javax.persistence.*;
-import java.util.List;
+/* import java.util.List; REMOVER!!!!*/
 
 @Entity
 public class Evento {
@@ -14,8 +14,8 @@ public class Evento {
     private String descricao;
     private int capacidade;
 
-    @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Participante> participantes;
+    /* @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true) REMOVER!!!!
+    private List<Participante> participantes; REMOVER!!!!*/
 
     // Getters and setters
 
@@ -67,12 +67,12 @@ public class Evento {
         this.capacidade = capacidade;
     }
 
-    public List<Participante> getParticipantes() {
+    /* public List<Participante> getParticipantes() {
         return participantes;
     }
 
     public void setParticipantes(List<Participante> participantes) {
         this.participantes = participantes;
-    }
+    } */
 }
 
